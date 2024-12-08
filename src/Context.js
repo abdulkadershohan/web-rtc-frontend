@@ -5,7 +5,8 @@ import Peer from 'simple-peer';
 const SocketContext = createContext();
 
 // const socket = io('http://localhost:5000');
-const socket = io('https://warm-wildwood-81069.herokuapp.com');
+//const socket = io('https://warm-wildwood-81069.herokuapp.com');
+const socket = io(`${process.env.NODE_ENV === 'production' ? 'https://web-rtc-backend-pgzk.onrender.com/' : 'http://localhost:5000'}`);
 
 const ContextProvider = ({ children }) => {
   const [callAccepted, setCallAccepted] = useState(false);
