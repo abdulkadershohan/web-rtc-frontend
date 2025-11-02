@@ -1,77 +1,109 @@
-import React, { useState, useContext } from 'react';
-import { Button, TextField, Grid, Typography, Container, Paper } from '@material-ui/core';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
-import { Assignment, Phone, PhoneDisabled } from '@material-ui/icons';
-import { makeStyles } from '@material-ui/core/styles';
+import { Assignment, Phone, PhoneDisabled } from "@mui/icons-material";
+import {
+  Button,
+  Container,
+  Grid,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useContext, useState } from "react";
 
-import { SocketContext } from '../Context';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  gridContainer: {
-    width: '100%',
-    [theme.breakpoints.down('xs')]: {
-      flexDirection: 'column',
-    },
-  },
-  container: {
-    width: '600px',
-    margin: '35px 0',
-    padding: 0,
-    [theme.breakpoints.down('xs')]: {
-      width: '80%',
-    },
-  },
-  margin: {
-    marginTop: 20,
-  },
-  padding: {
-    padding: 20,
-  },
-  paper: {
-    padding: '10px 20px',
-    border: '2px solid black',
-  },
-}));
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import { SocketContext } from "../Context";
 
 const Sidebar = ({ children }) => {
-  const { me, callAccepted, name, setName, callEnded, leaveCall, callUser } = useContext(SocketContext);
-  const [idToCall, setIdToCall] = useState('');
-  const classes = useStyles();
+  const { me, callAccepted, name, setName, callEnded, leaveCall, callUser } =
+    useContext(SocketContext);
+  const [idToCall, setIdToCall] = useState("");
 
   return (
-    <Container className={classes.container}>
-      <Paper elevation={10} className={classes.paper}>
-        <form className={classes.root} noValidate autoComplete="off">
-          <Grid container className={classes.gridContainer}>
-            <Grid item xs={12} md={6} className={classes.padding}>
-              <Typography gutterBottom variant="h6">Account Info</Typography>
-              <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-              <CopyToClipboard text={me} className={classes.margin}>
-                <Button variant="contained" color="primary" fullWidth startIcon={<Assignment fontSize="large" />}>
-                  Copy Your ID
-                </Button>
-              </CopyToClipboard>
+    <Container className="sidebar-container">
+      <Paper elevation={10} className="sidebar-paper">
+        <form noValidate autoComplete="off">
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 12 }}>
+              <Typography gutterBottom variant="h6">
+                Account Info <br />
+                <span
+                  style={{
+                    color: me ? "green" : "red",
+                    textAlign: "center",
+                  }}
+                >
+                  {me ? "connected" : "not connected"}
+                </span>
+                <FiberManualRecordIcon
+                  style={{
+                    color: me ? "green" : "red",
+                    fontSize: "14px",
+                    marginLeft: "8px",
+                  }}
+                />
+              </Typography>
+              <TextField
+                label="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                fullWidth
+                size="small"
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                startIcon={<Assignment fontSize="large" />}
+                onClick={() => {
+                  navigator.clipboard.writeText(me);
+                }}
+                style={{ marginTop: 8 }}
+                disabled={!name}
+                loading={!me}
+                loadingPosition="end"
+              >
+                {!me ? "Generating ID..." : "Copy Your ID"}
+              </Button>
             </Grid>
-            <Grid item xs={12} md={6} className={classes.padding}>
-              <Typography gutterBottom variant="h6">Make a call</Typography>
-              <TextField label="ID to call" value={idToCall} onChange={(e) => setIdToCall(e.target.value)} fullWidth />
+
+            <Grid size={{ xs: 12, md: 12 }}>
+              <Typography gutterBottom variant="h6">
+                Make a call
+              </Typography>
+              <TextField
+                label="ID to call"
+                value={idToCall}
+                onChange={(e) => setIdToCall(e.target.value)}
+                fullWidth
+                size="small"
+              />
               {callAccepted && !callEnded ? (
-                <Button variant="contained" color="secondary" startIcon={<PhoneDisabled fontSize="large" />} fullWidth onClick={leaveCall} className={classes.margin}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<PhoneDisabled fontSize="large" />}
+                  fullWidth
+                  onClick={leaveCall}
+                  style={{ marginTop: 8 }}
+                >
                   Hang Up
                 </Button>
               ) : (
-                <Button variant="contained" color="primary" startIcon={<Phone fontSize="large" />} fullWidth onClick={() => callUser(idToCall)} className={classes.margin}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Phone fontSize="large" />}
+                  fullWidth
+                  onClick={() => callUser(idToCall)}
+                  style={{ marginTop: 8 }}
+                  disabled={!idToCall}
+                >
                   Call
                 </Button>
               )}
             </Grid>
           </Grid>
         </form>
-        {children}
+        <div className="notifications">{children}</div>
       </Paper>
     </Container>
   );

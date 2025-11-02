@@ -1,0 +1,135 @@
+:root {
+  --bg: #0f1724;
+  --card: #0b1220;
+  --muted: #94a3b8;
+  --accent: #3b82f6;
+  --glass: rgba(255, 255, 255, 0.04);
+  --max-width: 1200px;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: linear-gradient(180deg, var(--bg), #071224 80%);
+  color: #e6eef8;
+  font-family: Inter, Roboto, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.app-bar {
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.15),
+    rgba(59, 130, 246, 0.08)
+  );
+  backdrop-filter: blur(6px);
+  box-shadow: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.app-title {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  max-width: var(--max-width);
+  width: 100%;
+  margin: 20px auto;
+  padding: 0 16px;
+  align-items: flex-start;
+}
+.app-main__video {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.app-main__sidebar {
+  width: 340px;
+  min-width: 260px;
+}
+
+.video-paper {
+  background: var(--card);
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.video-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.video-card {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.video-card h5 {
+  margin: 0 0 8px 0;
+  color: var(--muted);
+}
+.video-element {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: #000;
+  object-fit: cover;
+  max-height: 60vh;
+}
+
+.sidebar-paper {
+  background: var(--card);
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.sidebar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notifications {
+  margin-top: 12px;
+}
+.notification-inner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--glass);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 900px) {
+  .app-main {
+    flex-direction: column;
+    padding: 12px;
+  }
+  .app-main__sidebar {
+    width: 100%;
+    min-width: unset;
+  }
+  .video-element {
+    max-height: 40vh;
+  }
+}

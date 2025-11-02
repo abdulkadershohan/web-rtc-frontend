@@ -1,51 +1,69 @@
-import React, { useContext } from 'react';
-import { Grid, Typography, Paper, makeStyles } from '@material-ui/core';
-
-import { SocketContext } from '../Context';
-
-const useStyles = makeStyles((theme) => ({
-  video: {
-    width: '550px',
-    [theme.breakpoints.down('xs')]: {
-      width: '300px',
-    },
-  },
-  gridContainer: {
-    justifyContent: 'center',
-    [theme.breakpoints.down('xs')]: {
-      flexDirection: 'column',
-    },
-  },
-  paper: {
-    padding: '10px',
-    border: '2px solid black',
-    margin: '10px',
-  },
-}));
+import { Paper, Typography ,Stack} from "@mui/material";
+import { useContext, useEffect } from "react";
+import { SocketContext } from "../Context";
 
 const VideoPlayer = () => {
-  const { name, callAccepted, myVideo, userVideo, callEnded, stream, call } = useContext(SocketContext);
-  const classes = useStyles();
+  const {
+    name,
+    callAccepted,
+    myVideo,
+    userVideo,
+    callEnded,
+    stream,
+    call,
+    remoteStream,
+  } = useContext(SocketContext);
+
+  // Assign local stream to the video element when available and the ref exists
+  useEffect(() => {
+    if (myVideo?.current && stream) {
+      myVideo.current.srcObject = stream;
+    }
+  }, [stream, myVideo]);
+
+  // If a remote stream was provided before the remote <video> ref attached,
+  // assign it when either becomes available.
+  useEffect(() => {
+    if (userVideo?.current && remoteStream) {
+      userVideo.current.srcObject = remoteStream;
+    }
+  }, [remoteStream, userVideo]);
 
   return (
-    <Grid container className={classes.gridContainer}>
+    <Stack direction="row" spacing={2} justifyContent="center">
       {stream && (
-        <Paper className={classes.paper}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h5" gutterBottom>{name || 'Name'}</Typography>
-            <video playsInline muted ref={myVideo} autoPlay className={classes.video} />
-          </Grid>
+        <Paper className="video-paper">
+          <div className="video-card">
+            <Typography variant="h6" gutterBottom>
+              {name || "Me"}
+            </Typography>
+            <video
+              className="video-element"
+              playsInline
+              muted
+              ref={myVideo}
+              autoPlay
+            />
+          </div>
         </Paper>
       )}
+
       {callAccepted && !callEnded && (
-        <Paper className={classes.paper}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h5" gutterBottom>{call.name || 'Name'}</Typography>
-            <video playsInline ref={userVideo} autoPlay className={classes.video} />
-          </Grid>
+        <Paper className="video-paper">
+          <div className="video-card">
+            <Typography variant="h6" gutterBottom>
+              {call.name || "Caller"}
+            </Typography>
+            <video
+              className="video-element"
+              playsInline
+              ref={userVideo}
+              autoPlay
+            />
+          </div>
         </Paper>
       )}
-    </Grid>
+    </Stack>
   );
 };
 
