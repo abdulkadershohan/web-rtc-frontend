@@ -4,10 +4,6 @@ import { io } from "socket.io-client";
 
 const SocketContext = createContext();
 
-const socket = io("http://192.168.0.52:5000");
-// const socket = io("https://web-rtc-backend-pgzk.onrender.com/");
-// const socket = io(`${process.env.NODE_ENV === 'production' ? 'https://web-rtc-backend-pgzk.onrender.com/' : 'http://localhost:5000'}`);
-
 const ContextProvider = ({ children }) => {
   const [callAccepted, setCallAccepted] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
@@ -20,6 +16,9 @@ const ContextProvider = ({ children }) => {
   const userVideo = useRef(null);
   const connectionRef = useRef();
   const [remoteStream, setRemoteStream] = useState();
+
+  // add a ref to hold socket so all handlers can access the same instance
+  const socketRef = useRef(null);
 
   useEffect(() => {
     navigator.mediaDevices
@@ -34,36 +33,71 @@ const ContextProvider = ({ children }) => {
         }
       });
 
-    // Debug / diagnostic listeners
-    socket.on("connect", () => {
-      console.log("[Socket] connected", socket.id);
+    // Initialize socket here so we can control connect timing and debug.
+    // Change the URL to match your server if needed.
+    const url = "http://localhost:5000";
+    const s = io(url, {
+      autoConnect: false,
+      transports: ["websocket", "polling"],
+      reconnectionAttempts: 5,
+      timeout: 20000,
     });
+    socketRef.current = s;
 
-    socket.on("connect_error", (err) => {
+    // Expose for quick manual debugging in browser console
+    // e.g. window.__socket?.connected, window.__socket?.id, window.__socket?.disconnect()
+    window.__socket = s;
+
+    // Attach diagnostic listeners
+    s.on("connect", () => {
+      console.log("[Socket] connected", s.id);
+    });
+    s.on("disconnect", (reason) => {
+      console.log("[Socket] disconnected:", reason);
+    });
+    s.on("connect_error", (err) => {
       console.warn("[Socket] connect_error", err);
     });
+    s.on("reconnect_attempt", (attempt) => {
+      console.log("[Socket] reconnect_attempt", attempt);
+    });
+    s.on("reconnect_error", (err) => {
+      console.warn("[Socket] reconnect_error", err);
+    });
+    s.on("connect_timeout", (timeout) => {
+      console.warn("[Socket] connect_timeout", timeout);
+    });
 
-    socket.on("me", (id) => {
+    s.on("me", (id) => {
       console.log("[Socket] me ->", id);
       setMe(id);
     });
 
-    // Accept either `signal` or `signalData` from the server to be more robust
-    socket.on("callUser", (payload) => {
+    s.on("callUser", (payload) => {
       console.log("[Socket] callUser payload ->", payload);
       const { from, name: callerName } = payload || {};
       const signal =
         payload?.signal || payload?.signalData || payload?.signalData;
-
       setCall({ isReceivingCall: true, from, name: callerName, signal });
     });
 
-    // Clean up listeners on unmount to avoid duplicate handlers in dev (StrictMode)
+    // Now explicitly connect and log result
+    try {
+      s.connect();
+      console.log("[Socket] connecting to", url);
+    } catch (err) {
+      console.error("[Socket] connect throw", err);
+    }
+
+    // Clean up listeners on unmount and disconnect
     return () => {
-      socket.off("connect");
-      socket.off("connect_error");
-      socket.off("me");
-      socket.off("callUser");
+      try {
+        s.off();
+        s.disconnect();
+      } catch (e) {
+        // ignore
+      }
+      window.__socket = null;
     };
   }, []);
 
@@ -73,7 +107,7 @@ const ContextProvider = ({ children }) => {
     const peer = new Peer({ initiator: false, trickle: false, stream });
 
     peer.on("signal", (data) => {
-      socket.emit("answerCall", { signal: data, to: call.from });
+      socketRef.current?.emit("answerCall", { signal: data, to: call.from });
     });
 
     peer.on("stream", (currentStream) => {
@@ -94,7 +128,7 @@ const ContextProvider = ({ children }) => {
     const peer = new Peer({ initiator: true, trickle: false, stream });
 
     peer.on("signal", (data) => {
-      socket.emit("callUser", {
+      socketRef.current?.emit("callUser", {
         userToCall: id,
         signalData: data,
         from: me,
@@ -110,13 +144,21 @@ const ContextProvider = ({ children }) => {
       }
     });
 
-    socket.on("callAccepted", (signal) => {
+    // Use a namespaced listener on the ref so we can remove/avoid duplicates.
+    const s = socketRef.current;
+    const callAcceptedHandler = (signal) => {
       setCallAccepted(true);
 
       peer.signal(signal);
-    });
+    };
+
+    s?.on("callAccepted", callAcceptedHandler);
 
     connectionRef.current = peer;
+    // Ensure we remove this specific handler if the call ends/destroys
+    peer.on("close", () => {
+      s?.off("callAccepted", callAcceptedHandler);
+    });
   };
 
   const leaveCall = () => {
